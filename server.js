@@ -144,19 +144,7 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-app.put('/api/customer-metafields', async (req, res) => {
-  console.log('PUT /api/customer-metafields endpoint called');
-  console.log('Request protocol:', req.protocol);
-  console.log('Request headers:', JSON.stringify(req.headers, null, 2));
-  
-  // Handle preflight OPTIONS requests for HTTPS
-  if (req.method === 'OPTIONS') {
-    res.header('Access-Control-Allow-Methods', 'PUT, POST, GET, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, x-api-key, Authorization');
-    res.header('Access-Control-Max-Age', '86400');
-    return res.status(200).end();
-  }
-  
+app.post('/api/customer-metafields', async (req, res) => {
   // Validate API key
   if(req.headers['x-api-key'] !== process.env.KEY) {
     console.log('API Key validation failed');
