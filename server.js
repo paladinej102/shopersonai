@@ -19,13 +19,13 @@ const shopify = shopifyApi({
   isEmbeddedApp: true
 });
 const session = new Session({
-  id: `offline_${process.env.STORE_URL}`,
+  id: `online_${process.env.STORE_URL}`,
   shop: process.env.STORE_URL, // <-- must be a valid shop domain
-  isOnline: false,
+  isOnline: true,
   accessToken: process.env.ADMIN_ACCESS_TOKEN,
   apiVersion:LATEST_API_VERSION,
   scope: process.env.SCOPE,
-  state: 'development',
+  state: 'production',
 });
 const client = new shopify.clients.Graphql({session});
 
