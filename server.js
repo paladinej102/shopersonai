@@ -165,8 +165,7 @@ const saveMetafields = async (customerId, metafields) => {
   //   data: query,variables
   // });
   const response =  await client.request(query,{variables});
-  res.send({ message: 'Custom data saved successfully' });
-  // return response;
+  return response;
 }
 
 app.listen(port, function () {
