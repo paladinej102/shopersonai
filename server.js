@@ -2,6 +2,7 @@ const express = require('express');
 require('@shopify/shopify-api/adapters/node');
 const { OpenAI } = require('openai');
 const dotenv = require('dotenv');
+const cors = require('cors');
 const app = express();
 const { shopifyApi,LATEST_API_VERSION,Session } = require('@shopify/shopify-api');
 
