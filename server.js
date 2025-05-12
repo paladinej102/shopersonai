@@ -55,14 +55,6 @@ app.get('/', function (req, res) {
   res.send({ message: 'ChatGPT API Server is running' });
 });
 
-app.listen(port, function () {
-  console.log(`Server running on port ${port} in node`);
-});
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 app.post('/api/chat', async (req, res) => {
   if(req.headers['x-api-key'] !== process.env.KEY) {
     return res.status(401).send('Invalid API Key!');
@@ -138,6 +130,7 @@ app.post('/api/chat', async (req, res) => {
     res.status(500).json({ error: 'Failed to get response from ChatGPT' });
   }
 });
+
 app.put('/api/customer-metafields', async (req, res) => {
   if(req.headers['x-api-key'] !== process.env.KEY) {
     return res.status(401).send('Invalid API Key!');
@@ -174,3 +167,11 @@ const saveMetafields = async (customerId, metafields) => {
   const response =  await client.request(query,{variables});
   return response;
 }
+
+app.listen(port, function () {
+  console.log(`Server running on port ${port} in node`);
+});
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
