@@ -152,6 +152,7 @@ app.post('/api/customer-metafields', async (req, res) => {
   }
   
   try {
+    console.log(req.body)
     const { customerId, metafields } = req.body;
     const result = await saveMetafields(customerId, metafields);
     res.send(result);
