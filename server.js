@@ -1,12 +1,55 @@
 const express = require('express');
+require('@shopify/shopify-api/adapters/node');
 const { OpenAI } = require('openai');
 const dotenv = require('dotenv');
 const app = express();
+const { shopifyApi,LATEST_API_VERSION,Session } = require('@shopify/shopify-api');
 
 dotenv.config();
 const port = process.env.PORT;
-
 app.use(express.json());
+
+const shopify = shopifyApi({
+	apiKey: process.env.API_KEY,
+	apiSecretKey: process.env.SECRET_KEY,
+  adminApiAccessToken: process.env.ADMIN_ACCESS_TOKEN,
+	scopes: process.env.SCOPE.split(','),
+	hostName: process.env.HOST,
+	apiVersion: LATEST_API_VERSION,
+  isEmbeddedApp: true
+});
+const session = new Session({
+  id: `offline_${process.env.STORE_URL}`,
+  shop: process.env.STORE_URL, // <-- must be a valid shop domain
+  isOnline: false,
+  accessToken: process.env.ADMIN_ACCESS_TOKEN,
+  apiVersion:LATEST_API_VERSION,
+  scope: process.env.SCOPE,
+  state: 'development',
+});
+const client = new shopify.clients.Graphql({session});
+
+const query = `mutation updateCustomerMetafields($input: CustomerInput!) {
+      customerUpdate(input: $input) {
+        customer {
+          id
+          metafields(first: 3) {
+            edges {
+              node {
+                namespace
+                key
+                type
+                value
+              }
+            }
+          }
+        }
+        userErrors {
+          message
+          field
+        }
+      }
+    }`;
 
 app.get('/', function (req, res) {
   res.send({ message: 'ChatGPT API Server is running' });
@@ -21,13 +64,16 @@ const openai = new OpenAI({
 });
 
 app.post('/api/chat', async (req, res) => {
+  if(req.headers['x-api-key'] !== process.env.KEY) {
+    return res.status(401).send('Invalid API Key!');
+  }
   try {
     const { answer } = req.body;
     
     const content = `
       You are a fashion quiz tagger.
 
-      Based on the user’s single free-text answer to a style quiz question, return the most appropriate tags from the following predefined tag lists:
+      Based on the user's single free-text answer to a style quiz question, return the most appropriate tags from the following predefined tag lists:
 
       Style Tags (choose 1–2 max):
       - Minimal & Modern
@@ -92,3 +138,39 @@ app.post('/api/chat', async (req, res) => {
     res.status(500).json({ error: 'Failed to get response from ChatGPT' });
   }
 });
+app.put('/api/customer-metafields', async (req, res) => {
+  if(req.headers['x-api-key'] !== process.env.KEY) {
+    return res.status(401).send('Invalid API Key!');
+  }
+  try {
+    const { customerId, metafields } = req.body;
+    const result = await saveMetafields(customerId, metafields);
+    res.send(result);
+  } catch (error) {
+    console.error('Error updating customer metafields:', error);
+    res.status(500).json({ error: 'Failed to update customer metafields' });
+  }
+}); 
+
+const saveMetafields = async (customerId, metafields) => {
+  const metafieldsData = [];
+  for (const key in metafields) {
+    metafieldsData.push({
+      "namespace": "persona",
+      "key": key,
+      "type": "list.single_line_text_field",
+      "value": JSON.stringify(metafields[key])
+    });
+  }
+  let variables = {
+    "input": {
+      id: `gid://shopify/Customer/${customerId}`,
+      metafields: metafieldsData
+    }
+  }
+  // const response = await client.query({
+  //   data: query,variables
+  // });
+  const response =  await client.request(query,{variables});
+  return response;
+}
