@@ -12,13 +12,23 @@ app.use(express.json());
 app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   origin: '*',
-  credentials: true
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'x-api-key', 'Authorization']
 }));
 
 // Add request logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
+});
+
+// Special handling for OPTIONS requests (CORS preflight)
+app.options('*', (req, res) => {
+  console.log('Handling OPTIONS request for CORS preflight');
+  res.header('Access-Control-Allow-Methods', 'PUT, POST, GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, x-api-key, Authorization');
+  res.header('Access-Control-Max-Age', '86400');
+  res.status(200).end();
 });
 
 const shopify = shopifyApi({
@@ -144,9 +154,24 @@ app.post('/api/chat', async (req, res) => {
 });
 
 app.put('/api/customer-metafields', async (req, res) => {
+  console.log('PUT /api/customer-metafields endpoint called');
+  console.log('Request protocol:', req.protocol);
+  console.log('Request headers:', JSON.stringify(req.headers, null, 2));
+  
+  // Handle preflight OPTIONS requests for HTTPS
+  if (req.method === 'OPTIONS') {
+    res.header('Access-Control-Allow-Methods', 'PUT, POST, GET, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, x-api-key, Authorization');
+    res.header('Access-Control-Max-Age', '86400');
+    return res.status(200).end();
+  }
+  
+  // Validate API key
   if(req.headers['x-api-key'] !== process.env.KEY) {
+    console.log('API Key validation failed');
     return res.status(401).send('Invalid API Key!');
   }
+  
   try {
     const { customerId, metafields } = req.body;
     const result = await saveMetafields(customerId, metafields);
@@ -187,3 +212,15 @@ app.listen(port, function () {
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+// Add this at the end of your routes, just before starting the server
+// Handle 404 errors for any undefined routes
+app.use((req, res) => {
+  console.log(`404 Not Found: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({
+    error: 'Not Found',
+    message: `The requested resource ${req.originalUrl} was not found on this server`,
+    method: req.method
+  });
+});
+
