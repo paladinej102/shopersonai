@@ -22,15 +22,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Special handling for OPTIONS requests (CORS preflight)
-app.options('*', (req, res) => {
-  console.log('Handling OPTIONS request for CORS preflight');
-  res.header('Access-Control-Allow-Methods', 'PUT, POST, GET, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, x-api-key, Authorization');
-  res.header('Access-Control-Max-Age', '86400');
-  res.status(200).end();
-});
-
 const shopify = shopifyApi({
 	apiKey: process.env.API_KEY,
 	apiSecretKey: process.env.SECRET_KEY,
