@@ -8,6 +8,7 @@ const { shopifyApi,LATEST_API_VERSION,Session } = require('@shopify/shopify-api'
 dotenv.config();
 const port = process.env.PORT;
 app.use(express.json());
+app.use(cors());
 
 const shopify = shopifyApi({
 	apiKey: process.env.API_KEY,
