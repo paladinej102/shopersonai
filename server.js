@@ -16,12 +16,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'x-api-key', 'Authorization']
 }));
 
-// Add request logging middleware
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-  next();
-});
-
 const shopify = shopifyApi({
 	apiKey: process.env.API_KEY,
 	apiSecretKey: process.env.SECRET_KEY,
@@ -144,7 +138,7 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-app.post('/api/customer-metafields', async (req, res) => {
+app.put('/api/customer-metafields', async (req, res) => {
   // Validate API key
   if(req.headers['x-api-key'] !== process.env.KEY) {
     console.log('API Key validation failed');
@@ -191,16 +185,5 @@ app.listen(port, function () {
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-});
-
-// Add this at the end of your routes, just before starting the server
-// Handle 404 errors for any undefined routes
-app.use((req, res) => {
-  console.log(`404 Not Found: ${req.method} ${req.originalUrl}`);
-  res.status(404).json({
-    error: 'Not Found',
-    message: `The requested resource ${req.originalUrl} was not found on this server`,
-    method: req.method
-  });
 });
 
