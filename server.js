@@ -163,7 +163,7 @@ const saveMetafields = async (customerId, metafields) => {
   for (const key in metafields) {
     if (key == 'gender') {
       metafieldsData.push({
-        "namespace": "persona",
+        "namespace": "custom",
         "key": key,
         "type": "single_line_text_field",
         "value": JSON.stringify(metafields[key])
