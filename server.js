@@ -4,7 +4,7 @@ const { OpenAI } = require('openai');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const app = express();
-const { shopifyApi,LATEST_API_VERSION,Session } = require('@shopify/shopify-api');
+const { shopifyApi, LATEST_API_VERSION, Session } = require('@shopify/shopify-api');
 
 dotenv.config();
 const port = process.env.PORT;
@@ -17,12 +17,12 @@ app.use(cors({
 }));
 
 const shopify = shopifyApi({
-	apiKey: process.env.API_KEY,
-	apiSecretKey: process.env.SECRET_KEY,
+  apiKey: process.env.API_KEY,
+  apiSecretKey: process.env.SECRET_KEY,
   adminApiAccessToken: process.env.ADMIN_ACCESS_TOKEN,
-	scopes: process.env.SCOPE.split(','),
-	hostName: process.env.HOST,
-	apiVersion: LATEST_API_VERSION,
+  scopes: process.env.SCOPE.split(','),
+  hostName: process.env.HOST,
+  apiVersion: LATEST_API_VERSION,
   isEmbeddedApp: true
 });
 const session = new Session({
@@ -30,11 +30,11 @@ const session = new Session({
   shop: process.env.STORE_URL, // <-- must be a valid shop domain
   isOnline: true,
   accessToken: process.env.ADMIN_ACCESS_TOKEN,
-  apiVersion:LATEST_API_VERSION,
+  apiVersion: LATEST_API_VERSION,
   scope: process.env.SCOPE,
   state: 'production',
 });
-const client = new shopify.clients.Graphql({session});
+const client = new shopify.clients.Graphql({ session });
 
 const query = `mutation updateCustomerMetafields($input: CustomerInput!) {
       customerUpdate(input: $input) {
@@ -63,16 +63,15 @@ app.get('/', function (req, res) {
 });
 
 app.post('/api/chat', async (req, res) => {
-  if(req.headers['x-api-key'] !== process.env.KEY) {
+  if (req.headers['x-api-key'] !== process.env.KEY) {
     return res.status(401).send('Invalid API Key!');
   }
   try {
     const { answer } = req.body;
-    
+
     const content = `
       You are a fashion quiz tagger.
-
-      Based on the user's single free-text answer to a style quiz question, return the most appropriate tags from the following predefined tag lists:
+      Based on the user's single free-text answer to a style quiz question, return the most appropriate tags from the following predefined tag lists and also guess the user's gender based on the answer provided:
 
       Style Tags (choose 1–2 max):
       - Minimal & Modern
@@ -98,17 +97,21 @@ app.post('/api/chat', async (req, res) => {
       - Date / Romantic
       - Eclectic
 
+      Gender (choose 1):
+      - Male
+      - Female
+
       Return only the JSON output (no code blocks, no explanations). Do not wrap it in markdown or backticks.
 
       {
         "style_tags": [...],
         "fitting_tags": [...],
-        "activity_tags": [...]
+        "activity_tags": [...],
+        "gender": "..."
       }
 
-      Here's the user's answer:
-      "${answer}"
-    `;
+      Here's the user's answer:"${answer}"
+      `;
 
     const messages = [{ role: "user", content }];
 
@@ -131,7 +134,7 @@ app.post('/api/chat', async (req, res) => {
       tags,
       usage: completion.usage
     });
-    
+
   } catch (error) {
     console.error('Error calling OpenAI:', error);
     res.status(500).json({ error: 'Failed to get response from ChatGPT' });
@@ -140,13 +143,12 @@ app.post('/api/chat', async (req, res) => {
 
 app.put('/api/customer-metafields', async (req, res) => {
   // Validate API key
-  if(req.headers['x-api-key'] !== process.env.KEY) {
+  if (req.headers['x-api-key'] !== process.env.KEY) {
     console.log('API Key validation failed');
     return res.status(401).send('Invalid API Key!');
   }
-  
+
   try {
-    console.log(req.body)
     const { customerId, metafields } = req.body;
     const result = await saveMetafields(customerId, metafields);
     res.send(result);
@@ -154,17 +156,26 @@ app.put('/api/customer-metafields', async (req, res) => {
     console.error('Error updating customer metafields:', error);
     res.status(500).json({ error: 'Failed to update customer metafields' });
   }
-}); 
+});
 
 const saveMetafields = async (customerId, metafields) => {
   const metafieldsData = [];
   for (const key in metafields) {
-    metafieldsData.push({
-      "namespace": "persona",
-      "key": key,
-      "type": "list.single_line_text_field",
-      "value": JSON.stringify(metafields[key])
-    });
+    if (key == 'gender') {
+      metafieldsData.push({
+        "namespace": "persona",
+        "key": key,
+        "type": "single_line_text_field",
+        "value": JSON.stringify(metafields[key])
+      });
+    } else {
+      metafieldsData.push({
+        "namespace": "persona",
+        "key": key,
+        "type": "list.single_line_text_field",
+        "value": JSON.stringify(metafields[key])
+      });
+    }
   }
   let variables = {
     "input": {
@@ -172,10 +183,8 @@ const saveMetafields = async (customerId, metafields) => {
       metafields: metafieldsData
     }
   }
-  // const response = await client.query({
-  //   data: query,variables
-  // });
-  const response =  await client.request(query,{variables});
+
+  const response = await client.request(query, { variables });
   return response;
 }
 
