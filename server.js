@@ -70,62 +70,63 @@ app.post('/api/chat', async (req, res) => {
     const { question, answer } = req.body;
 
     const content = `
-      This is a question ${question}.
-      You are a fashion quiz tagger.
-      Based on the user's single free-text answer to a style quiz question, return the most appropriate tags from the following predefined tag lists and also guess the user's gender based on the answer provided:
+  This is a question: "${question}".
+  You are a fashion quiz tagger.
+  Based on the user's single free-text answer to a style quiz question, return the most appropriate tags from the following predefined tag lists and, only if the question is about gender, also guess the user's gender based on the answer:
 
-      Style Tags (choose 1–2 max):
-      - Minimal & Modern
-      - Romantic & Feminine
-      - Bold & Trend-Driven
-      - Relaxed & Effortless
-      - Eclectic & Individualistic
+  Style Tags (choose 1–2 max):
+  - Minimal & Modern
+  - Romantic & Feminine
+  - Bold & Trend-Driven
+  - Relaxed & Effortless
+  - Eclectic & Individualistic
 
-      Fitting Tags (choose 1–2 max):
-      - Tailored
-      - Flowy
-      - Oversized
-      - Relaxed
-      - Form-Fitting
+  Fitting Tags (choose 1–2 max):
+  - Tailored
+  - Flowy
+  - Oversized
+  - Relaxed
+  - Form-Fitting
 
-      Activity Tags (choose 1–3 max):
-      - Work / Office
-      - Fitness / Active
-      - Event / Night Out
-      - Lounge / At Home
-      - Travel / On-the-Go
-      - Weekend Casual
-      - Date / Romantic
-      - Eclectic
+  Activity Tags (choose 1–3 max):
+  - Work / Office
+  - Fitness / Active
+  - Event / Night Out
+  - Lounge / At Home
+  - Travel / On-the-Go
+  - Weekend Casual
+  - Date / Romantic
+  - Eclectic
 
-      Gender (choose 1):
-      - Male
-      - Female
+  Gender (choose 1 if applicable):
+  - Male
+  - Female
 
-      Return only the JSON output (no code blocks, no explanations). Do not wrap it in markdown or backticks.
+  If the question is similar to "What is your gender?", return the JSON output in this format:
+  {
+    "style_tags": [...],
+    "fitting_tags": [...],
+    "activity_tags": [...],
+    "gender": "..."
+  }
 
-      {
-        "style_tags": [...],
-        "fitting_tags": [...],
-        "activity_tags": [...],
-        "gender": "..."
-      }
+  If the question is anything else, return the JSON output in this format:
+  {
+    "style_tags": [...],
+    "fitting_tags": [...],
+    "activity_tags": [...]
+  }
 
-      You must only guess and output the gender when question is similar to "What is your gender?".
-      And another case you have to output like this:
-      {
-        "style_tags": [...],
-        "fitting_tags": [...],
-        "activity_tags": [...]
-      }
+  Return only the JSON (no code blocks, no explanations, no markdown formatting).
 
-      Here's the user's answer:"${answer}"
-      `;
+  Here's the user's answer: "${answer}"
+`;
+
 
     const messages = [{ role: "user", content }];
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4",
       messages,
     });
 
