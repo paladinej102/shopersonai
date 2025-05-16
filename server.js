@@ -67,9 +67,10 @@ app.post('/api/chat', async (req, res) => {
     return res.status(401).send('Invalid API Key!');
   }
   try {
-    const { answer } = req.body;
+    const { question, answer } = req.body;
 
     const content = `
+      This is a question ${question}.
       You are a fashion quiz tagger.
       Based on the user's single free-text answer to a style quiz question, return the most appropriate tags from the following predefined tag lists and also guess the user's gender based on the answer provided:
 
@@ -108,6 +109,14 @@ app.post('/api/chat', async (req, res) => {
         "fitting_tags": [...],
         "activity_tags": [...],
         "gender": "..."
+      }
+
+      You must only guess and output the gender when question is similar to "What is your gender?".
+      And another case you have to output like this:
+      {
+        "style_tags": [...],
+        "fitting_tags": [...],
+        "activity_tags": [...]
       }
 
       Here's the user's answer:"${answer}"
